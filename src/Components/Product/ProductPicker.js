@@ -8,9 +8,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import { addDoc, collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../Firebase-config';
 import Alert from '@mui/material/Alert';
-import CheckIcon from '@mui/icons-material/Check';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import Stack from '@mui/material/Stack';
 import NotificationBar from '../ServiceNotificationBar';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
@@ -49,16 +46,12 @@ const ProductPicker = ({ open, setOpen, editeList }) => {
       console.log("editeListediteList==>", textOnly);
       seUpdatetProduct(textOnly);
     }
-  }, [editeList])
-
-
+  }, [editeList]);
 
   const handleClose = () => {
-    setOpen(false);
     setSelectedItems([]);
-    
+    setOpen(false);
   };
-
 
   const notificationhandleClose = () => {
     setNotification({
@@ -67,6 +60,7 @@ const ProductPicker = ({ open, setOpen, editeList }) => {
       message: '',
     });
   };
+
   // Fetch products from Firestore
   useEffect(() => {
     const getProduct = async () => {
@@ -103,11 +97,12 @@ const ProductPicker = ({ open, setOpen, editeList }) => {
         setNotification({
           status: true,
           type: 'success',
-          message: "Add Succefully..",
+          message: "Add Successfully..",
         });
         setTimeout(() => {
           notificationhandleClose();
           handleClose();
+          setOpen(false);
         }, 3000);
       } else {
         const productDoc = doc(db, "selectedDataList", editeList.id);
@@ -115,11 +110,12 @@ const ProductPicker = ({ open, setOpen, editeList }) => {
         setNotification({
           status: true,
           type: 'success',
-          message: "Updated Succefully..",
+          message: "Updated Successfully..",
         });
         setTimeout(() => {
           notificationhandleClose();
           handleClose();
+          setOpen(false);
         }, 3000);
       }
     } else {
@@ -135,12 +131,29 @@ const ProductPicker = ({ open, setOpen, editeList }) => {
   // Handle main product checkbox change
   const handleChangeMain = (idx) => {
     const updatedState = [...checkedState];
-    updatedState[idx].checked = !updatedState[idx].checked;
+    const isCurrentlyChecked = updatedState[idx].checked;
+
+    // Toggle the main product's checked state
+    updatedState[idx].checked = !isCurrentlyChecked;
+
+    // Update the variants based on main checkbox state
+    updatedState[idx].variants = updatedState[idx].variants.map(() => ({
+      checked: !isCurrentlyChecked,
+    }));
+
+    // Update selected items list
     if (updatedState[idx].checked) {
-      setSelectedItems(prev => [...prev, productList[idx]]);
+      // Include the main product with all variants checked
+      const selectedVariants = productList[idx].variants;
+      setSelectedItems((prev) => [
+        ...prev.filter((item) => item.id !== productList[idx].id),
+        { ...productList[idx], variants: selectedVariants },
+      ]);
     } else {
-      setSelectedItems(prev => prev.filter(item => item !== productList[idx]));
+      // Remove the main product from selected items
+      setSelectedItems((prev) => prev.filter((item) => item.id !== productList[idx].id));
     }
+
     setCheckedState(updatedState);
   };
 
@@ -188,7 +201,7 @@ const ProductPicker = ({ open, setOpen, editeList }) => {
               placeholder="Search Product"
               fullWidth
               value={searchTerm}
-              onChange={handleSearchChange} // Handle search input change
+              onChange={handleSearchChange}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px',

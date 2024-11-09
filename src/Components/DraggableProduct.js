@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Grid from '@mui/material/Grid';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -6,36 +6,44 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Divider from '@mui/material/Divider';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
+import DraggableProductVeriant from './DraggableProductVeriant';
+import { deleteDoc, doc } from "firebase/firestore";
+import { db } from '../Firebase-config';
 
-const DraggableProduct = ({ selectedList, setSelectedList, discount, handleClickDiscount, toggleVariants, variantStates, handleClickOpen, setEditeList }) => {
+const DraggableProduct = ({ selectedList, setSelectedList, toggleVariants, variantStates, handleClickOpen, setEditeList, open, refresh, setRefresh }) => {
+
+    const [productListId, setProductListId] = useState("");
+
     const handleDragEnd = (result) => {
         if (!result.destination) return;
-
         const reorderedList = Array.from(selectedList);
         const [movedItem] = reorderedList.splice(result.source.index, 1);
         reorderedList.splice(result.destination.index, 0, movedItem);
-
         setSelectedList(reorderedList);
     };
 
-    const EditData = (props) => {
-        console.log("sanjeeth::EditData",props)
-        return (
-            <EditIcon 
-                onClick={(event) => {
-                    setEditeList(props.selectedRow);
-                }}
-            />
+    const toggleDiscount = (index) => {
+        const updatedList = selectedList.map((item, i) =>
+            i === index ? { ...item, discount: !item.discount } : item
         );
-    }
+        setSelectedList(updatedList);
+    };
 
-    console.log("sanjeeth::Draggable", selectedList)
+    const RemoveProdcut = async (item) => {
+        const productDoc = doc(db, "selectedDataList", item.id);
+        await deleteDoc(productDoc);
+        setRefresh(oldValue => !oldValue);
+    };
+
+    useEffect(() => {
+        console.log("Open state changed:", open);
+    }, [open, selectedList, refresh]);
+
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="droppable-list">
@@ -77,7 +85,7 @@ const DraggableProduct = ({ selectedList, setSelectedList, discount, handleClick
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end" sx={{ cursor: 'pointer' }} onClick={handleClickOpen}>
-                                                            <EditData selectedRow={item}  />
+                                                            <EditIcon onClick={() => setEditeList(item)} />
                                                         </InputAdornment>
                                                     ),
                                                 }}
@@ -85,7 +93,7 @@ const DraggableProduct = ({ selectedList, setSelectedList, discount, handleClick
                                         </Grid>
 
                                         <Grid item xs={12} md={3} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                                            {discount ? (
+                                            {item.discount ? (
                                                 <div sx={{ display: 'flex', alignItems: 'center' }}>
                                                     <TextField
                                                         variant="outlined"
@@ -117,28 +125,33 @@ const DraggableProduct = ({ selectedList, setSelectedList, discount, handleClick
                                                         <MenuItem value="%off">% off</MenuItem>
                                                         <MenuItem value='flatoff'>flat off</MenuItem>
                                                     </Select>
-                                                    <CloseIcon sx={{ ml: '10px', cursor: 'pointer' }} onClick={handleClickDiscount} />
+                                                    <CloseIcon sx={{ ml: '10px', cursor: 'pointer' }} onClick={() => toggleDiscount(index)} />
                                                 </div>
                                             ) : (
-                                                <Button
-                                                    variant="contained"
-                                                    sx={{
-                                                        minWidth: '250px',
-                                                        color: 'white',
-                                                        backgroundColor: '#008060',
-                                                        '&:hover': { backgroundColor: 'darkgreen' },
-                                                    }}
-                                                    onClick={handleClickDiscount}
-                                                >
-                                                    Add Discount
-                                                </Button>
+                                                <Grid style={{ display: "flex", alignItems: "center" }}>
+                                                    <Button
+                                                        variant="contained"
+                                                        sx={{
+                                                            minWidth: '200px',
+                                                            color: 'white',
+                                                            backgroundColor: '#008060',
+                                                            '&:hover': { backgroundColor: 'darkgreen' },
+                                                        }}
+                                                        onClick={() => toggleDiscount(index)}
+                                                    >
+                                                        Add Discount
+                                                    </Button>
+                                                    <CloseIcon sx={{ ml: '10px', cursor: 'pointer' }} onClick={() => RemoveProdcut(item)} />
+                                                </Grid>
                                             )}
                                         </Grid>
-
-                                        {selectedList[index]?.selectedList[0]?.variants && (
+                                        {item?.selectedList[0]?.variants && (
                                             <Grid item xs={12} sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
                                                 <Button
-                                                    onClick={() => toggleVariants(index)}
+                                                    onClick={() => {
+                                                        toggleVariants(index)
+                                                        setProductListId(item.id);
+                                                    }}
                                                     variant="text"
                                                     sx={{ textDecoration: 'underline' }}
                                                 >
@@ -154,39 +167,15 @@ const DraggableProduct = ({ selectedList, setSelectedList, discount, handleClick
                                                 </Button>
                                             </Grid>
                                         )}
-
-                                        {variantStates[index] && item.selectedList && item.selectedList.map((product) => (
-                                            <Grid item xs={9} key={product.id} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '20px' }}>
-                                                <div>
-                                                    <InputAdornment position="start">
-                                                        <DragIndicatorIcon sx={{ color: '#666', cursor: 'pointer' }} />
-                                                    </InputAdornment>
-                                                </div>
-                                                <div>
-                                                    <TextField
-                                                        variant="outlined"
-                                                        placeholder={product.title}
-                                                        value={product.title}
-                                                        fullWidth
-                                                        sx={{
-                                                            minWidth: '550px',
-                                                            '& .MuiOutlinedInput-root': {
-                                                                borderRadius: '20px',
-                                                                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-                                                            },
-                                                            '& .MuiOutlinedInput-input': {
-                                                                padding: '10px 14px',
-                                                            },
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <InputAdornment position="start">
-                                                        <CloseIcon sx={{ color: '#666', cursor: 'pointer' }} />
-                                                    </InputAdornment>
-                                                </div>
-                                            </Grid>
-                                        ))}
+                                        <Grid item xs={12} md={12} style={{ display: "flex", justifyContent: "flex-end" }}>
+                                            <DraggableProductVeriant
+                                                items={item}
+                                                variantStates={variantStates[index]}
+                                                productListId={productListId}
+                                                refresh={refresh}
+                                                setRefresh={setRefresh}
+                                            />
+                                        </Grid>
                                     </Grid>
                                 )}
                             </Draggable>

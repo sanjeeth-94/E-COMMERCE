@@ -17,6 +17,7 @@ import DraggableProduct from '../DraggableProduct';
 const ProductList = () => {
   const productSelectedListnRef = collection(db, "selectedDataList");
   const [open, setOpen] = useState(false);
+  const [refresh, setRefresh] = useState(false);
   // const [discount, setDiscount] = useState(false);
   const [productCount, setProductCount] = useState([1]);
   const [productItems, setProductItems] = useState(productCount);
@@ -88,7 +89,7 @@ const ProductList = () => {
 
     getProduct();
     console.log("sanjeeth::editeList", editeList)
-  }, [editeList, open]);
+  }, [editeList, open, refresh]);
 
   useEffect(() => {
     const newCount = Array.from({ length: selectedList.length }, (_, i) => i + 1);
@@ -131,145 +132,6 @@ const ProductList = () => {
           </Grid>
           <Divider variant="fullWidth" sx={{ my: 1 }} />
 
-          {/* {selectedList.map((item, index) => (
-            <Grid container spacing={2} key={item.id} style={{ padding: '5px' }}>
-              <Grid item xs={8} sx={{ display: 'flex', alignItems: 'center' }}>
-                <InputAdornment position="start">
-                  <DragIndicatorIcon sx={{ color: '#666', cursor: 'pointer' }} />
-                </InputAdornment>
-                <span style={{ marginRight: '10px' }}>{index + 1}</span>
-                <TextField
-                  variant="outlined"
-                  placeholder="Select Product"
-                  fullWidth
-                  value={item?.selectedList[0]?.title || "Select Product"}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '0px',
-                      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-                    },
-                    '& .MuiOutlinedInput-input': {
-                      padding: '10px 14px',
-                    },
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end" sx={{ cursor: 'pointer' }} onClick={() => { }}>
-                        <EditIcon sx={{ color: '#666' }} onClick={handleClickOpen} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={4} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                {discount ? (
-                  <div sx={{ display: 'flex', alignItems: 'center' }}>
-                    <TextField
-                      variant="outlined"
-                      placeholder="0"
-                      sx={{
-                        width: '100px',
-                        mr: '10px',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '0px',
-                          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-                        },
-                        '& .MuiOutlinedInput-input': {
-                          padding: '10px 14px',
-                        },
-                      }}
-                    />
-                    <Select
-                      sx={{
-                        width: '100px',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '0px',
-                          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-                        },
-                        '& .MuiOutlinedInput-input': {
-                          padding: '10px 14px',
-                        },
-                      }}
-                    >
-                      <MenuItem value={10}>% off</MenuItem>
-                      <MenuItem value={20}>flat off</MenuItem>
-                    </Select>
-                    <CloseIcon sx={{ ml: '10px', cursor: 'pointer' }} onClick={handleClickDiscount} />
-                  </div>
-                ) : (
-                  <Button
-                    variant="contained"
-                    sx={{
-                      color: 'white',
-                      backgroundColor: '#008060',
-                      '&:hover': { backgroundColor: 'darkgreen' },
-                    }}
-                    onClick={handleClickDiscount}
-                  >
-                    Add Discount
-                  </Button>
-                )}
-              </Grid>
-              {
-                selectedList[index]?.selectedList?.length > 0 ? (
-                  <Grid item xs={9.5} sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
-                    <Button
-                      onClick={() => toggleVariants(index)}
-                      variant="text"
-                      sx={{ textDecoration: 'underline' }}
-                    >
-                      {variantStates[index] ? (
-                        <>
-                          Hide Variants <KeyboardArrowUpIcon />
-                        </>
-                      ) : (
-                        <>
-                          Show Variants <ExpandMoreIcon />
-                        </>
-                      )}
-                    </Button>
-                  </Grid>
-                ) : (
-                  <></>
-                )
-              }
-              <Divider variant="fullWidth" sx={{ my: 1 }} />
-              {variantStates[index] && item.selectedList && item.selectedList.map((product) => (
-                <Grid item xs={9.5} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '20px' }} key={product.id}>
-                  <div>
-                    <InputAdornment position="start">
-                      <DragIndicatorIcon sx={{ color: '#666', cursor: 'pointer' }} />
-                    </InputAdornment>
-                  </div>
-                  <div>
-                    <TextField
-                      variant="outlined"
-                      placeholder={product.title}
-                      value={product.title}
-                      fullWidth
-                      sx={{
-                        minWidth: '750px',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '20px',
-                          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-                        },
-                        '& .MuiOutlinedInput-input': {
-                          padding: '10px 14px',
-                        },
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <InputAdornment position="start">
-                      <CloseIcon sx={{ color: '#666', cursor: 'pointer' }} />
-                    </InputAdornment>
-                  </div>
-                </Grid>
-              ))}
-
-            </Grid>
-          ))} */}
           <Grid item xs={7}>
             <DraggableProduct
               selectedList={selectedList}
@@ -280,6 +142,9 @@ const ProductList = () => {
               variantStates={variantStates}
               handleClickOpen={handleClickOpen}
               setEditeList={setEditeList}
+              open={open}
+              refresh={refresh}
+              setRefresh={setRefresh}
             />
           </Grid>
 
@@ -294,7 +159,8 @@ const ProductList = () => {
           </Grid>
         </Grid>
         <ProductPicker
-          open={open} setOpen={setOpen}
+          open={open}
+          setOpen={setOpen}
           editeList={editeList}
         />
       </Grid>
